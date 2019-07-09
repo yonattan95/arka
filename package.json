@@ -1,0 +1,16 @@
+{
+  "name": "API_ARKA",
+  "version": "1.0.0",
+  "description": "api de solicitudes y respuestas para el aplicativo arka",
+  "main": "index.js",
+  "author": "Yonattan Vallejos",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.17.1",
+    "nodemon": "^1.19.1",
+    "pg": "^7.11.0"
+  },
+  "scripts": {
+    "start": "nodemon index.js"
+  }
+}
