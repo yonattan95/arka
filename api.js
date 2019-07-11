@@ -1,5 +1,5 @@
 const express = require('express');
-
+const multer = require('multer');
 const {Pool} = require('pg');
 
 //variables globales
@@ -11,9 +11,30 @@ const pool_pg = new Pool({
     host: '192.168.0.29'
 });
 const router = express.Router();
+const storage = multer.diskStorage({
+    destination: (req,file,cb)=>{ cb(null,'uploads/')},
+    filename: (req,file,cb)=>{cb(null,`${Date.now()}-${file.originalname}`)}
+});
+const upload = multer({storage});
 
 //middleware
 router.use(express.json());
+
+
+//router para login
+router.post('/login',(req,res)=>{
+    const user_name = req.body.usuario;
+    const password = req.body.contraseña;
+    const sql_query = `SELECT login_for_user('${user_name}','${password}') AS "acceso" LIMIT 1`;
+    pool_pg.query(sql_query,(err,rs)=>{
+        console.log(err);
+        if(err){
+            res.sendStatus(500);
+        }else{
+            res.status(200).send(rs.rows[0]);
+        }
+    });
+});
 
 //router general
 
@@ -51,11 +72,11 @@ router.route('/reservas/')
     });
 })
 .post((req,res)=>{
-    const reservation_state_id = req.body.id_estado_reservacion;
+    const reservation_state_id = req.body.id_estado_reserva;
     const user_id = req.body.id_usuario;
     const vehicle_id = req.body.id_vehiculo;
     const place_id = req.body.id_espacio;
-    const reservation_date = req.body.fecha_reservacion;
+    const reservation_date = req.body.fecha_reserva;
     const finished_date = req.body.fecha_terminado;
     const rent_hours = req.body.horas_alquiladas;
     const sql_query = `SELECT add_reservation(${reservation_state_id},${user_id},${vehicle_id},${place_id},${reservation_date},${finished_date},${rent_hours})`;
@@ -94,6 +115,8 @@ router.route('/usuarios/')
     pool_pg.query(sql_query,(err,rs)=>{
         if(err){
             res.sendStatus(500);
+            console.log(err);
+            
         }else{
             res.status(200).send(rs.rowCount.toString());
         }
@@ -111,18 +134,22 @@ router.route('/cocheras/')
         }
     });
 })
-.post((req,res)=>{
-    const user_id = req.body.id_usuario;
+.post(upload.single('foto'),(req,res)=>{
+    //procesando la imagen    
+    const user_id = 2;
     const location = req.body.ubicacion;
     const latitud = req.body.latitud;
     const longitud = req.body.longitud;
     const rate = req.body.tarifa;
     const name = req.body.nombre;
     const quantity_place = req.body.cantidad_espacios;
-    const url_image = req.body.url_foto;
+    const url_image = req.file.filename;
     const sql_query = `SELECT add_garage(${user_id},'${location}','${latitud}','${longitud}',${rate},'${name}',${quantity_place},'${url_image}')`;
+    console.log(sql_query);
+    
     pool_pg.query(sql_query,(err,rs)=>{
         if(err){
+            console.log(err);            
             res.sendStatus(500);
         }else{
             res.status(200).send(rs.rowCount.toString());
